@@ -6,5 +6,6 @@
  */
 
 
-//$meta['fixme'] = array('string');
-
+$meta['dsn'] = array('string');
+$meta['db_user'] = array('string');
+$meta['db_pass'] = array('string', '_code' => 'uuencode');

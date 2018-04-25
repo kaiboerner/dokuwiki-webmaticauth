@@ -5,8 +5,8 @@
  * @author Kai Börner <kb@webmatic.de>
  */
 
-$lang['dsn'] = 'Database DSN';
-$lang['db_user'] = 'Database User';
-$lang['db_pass'] = 'Database Password';
+$lang['dsn'] = 'Datenbank-DSN';
+$lang['db_user'] = 'Datenbank-Benutzer';
+$lang['db_pass'] = 'Datenbank-Passwort';
 
 //Setup VIM: ex: et ts=4 :
