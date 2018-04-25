@@ -1,0 +1,7 @@
+base   webmaticauth
+author Kai Börner
+email  kb@webmatic.de
+date   2018-04-25
+name   webmaticauth plugin
+desc   Authentication via Webmatic Accounting DB
+url    https://github.com/kaiboerner/dokuwiki-webmaticauth
