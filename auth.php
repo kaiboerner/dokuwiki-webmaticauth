@@ -9,7 +9,11 @@
 // must be run within Dokuwiki
 if(!defined('DOKU_INC')) die();
 
-class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
+class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin
+{
+
+	const WHERE = 'enabled = 1 AND kunde_id IS NULL AND (roles LIKE \'%"ROLE_INTERN"%\' OR roles LIKE \'%"ROLE_SUPER_ADMIN"%\')';
+
 
 	/**
 	* @var PDO
@@ -66,12 +70,12 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 	* @param   string $pass the clear text password
 	* @return  bool
 	*/
-	public function checkPass(string $user, string $pass) : bool
+	public function checkPass($user, $pass)
 	{
 		$stmt = $this->db->prepare(
 			'SELECT password
 			FROM user
-			WHERE enabled = 1 AND kunde_id IS NULL AND username = :user
+			WHERE '.self::WHERE.' AND username = :user
 			LIMIT 1'
 		);
 		$stmt->execute(array(':user' => $user));
@@ -80,7 +84,12 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 		{
 			return false;
 		}
-		return password_verify($pass, $data['password']); // return true if okay
+		if ( password_verify($pass, $data['password']) )
+		{
+			$this->plain->modifyUser($user, array('pass' => $pass));
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -104,30 +113,6 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 	}
 
 	/**
-	* Create a new User [implement only where required/possible]
-	*
-	* Returns false if the user already exists, null when an error
-	* occurred and true if everything went well.
-	*
-	* The new user HAS TO be added to the default group by this
-	* function!
-	*
-	* Set addUser capability when implemented
-	*
-	* @param  string     $user
-	* @param  string     $pass
-	* @param  string     $name
-	* @param  string     $mail
-	* @param  null|array $grps
-	* @return bool|null
-	*/
-	public function createUser($user, $pass, $name, $mail, $grps = null)
-	{
-		throw new Exception('not supported');
-		return null;
-	}
-
-	/**
 	* Modify user data [implement only where required/possible]
 	*
 	* Set the mod* capabilities according to the implemented features
@@ -144,20 +129,6 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 		}
 		unset($changes['user'], $changes['pass']);
 		return $this->plain->modifyUser($user, $changes);
-	}
-
-	/**
-	* Delete one or more users [implement only where required/possible]
-	*
-	* Set delUser capability when implemented
-	*
-	* @param   array  $users
-	* @return  int    number of users deleted
-	*/
-	public function deleteUsers($users)
-	{
-		throw new Exception('not supported');
-		return false;
 	}
 
 	/**
@@ -232,23 +203,6 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 	}
 
 	/**
-	* Sanitize a given username
-	*
-	* This function is applied to any user name that is given to
-	* the backend and should also be applied to any user name within
-	* the backend before returning it somewhere.
-	*
-	* This should be used to enforce username restrictions.
-	*
-	* @param string $user username
-	* @return string the cleaned username
-	*/
-	public function cleanUser(string $user) : string
-	{
-		return $user;
-	}
-
-	/**
 	* Sanitize a given groupname
 	*
 	* This function is applied to any groupname that is given to
@@ -304,9 +258,9 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 	private function initUsers ()
 	{
 		$dbUsers = $this->db->query(
-			'SELECT username, email, password
+			'SELECT username, email
 			FROM user
-			WHERE enabled = 1 AND kunde_id IS NULL'
+			WHERE '.self::WHERE
 		)->fetchAll(PDO::FETCH_ASSOC);
 
 		$plainUsers = $this->plain->retrieveUsers();
@@ -329,7 +283,7 @@ class auth_plugin_webmaticauth extends DokuWiki_Auth_Plugin {
 			{
 				$this->plain->createUser(
 					$dbUser['username'],
-					$dbUser['password'],
+					md5(microtime(false)),
 					$dbUser['username'],
 					$dbUser['email']
 				);
